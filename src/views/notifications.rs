@@ -10,7 +10,7 @@ pub fn Notifications() -> Element {
     let mark_all_read = move |_| db().mark_all_notifications_read();
     rsx! {
         div {
-            div { class: "p-4 text-xs opacity-60 tracking-wide", "Notifications" }
+            div { class: "p-4 small-heading", "Notifications" }
             div { class: "p-4",
                 button { class: "btn-sm btn btn-primary", onclick: mark_all_read, "Mark all read" }
             }

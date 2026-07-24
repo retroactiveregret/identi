@@ -42,7 +42,7 @@ pub fn BoardPosts(db: Signal<Database>, status_message: Signal<Status>) -> Eleme
 
     rsx! {
         div { class: "w-full flex flex-col gap-2 p-2 pt-0",
-            div { class: "p-4 pb-0 pt-0 text-xs opacity-60 tracking-wide", "Board" }
+            div { class: "p-4 pb-0 pt-0 small-heading", "Board" }
             div {
                 EditBoardPost {
                     db,

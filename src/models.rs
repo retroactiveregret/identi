@@ -99,21 +99,34 @@ pub struct Database {
     pub journal_entries: Signal<IndexMap<Uuid, JournalEntry>>,
     pub board_posts: Signal<IndexMap<Uuid, BoardPost>>,
     pub user_mentions: Signal<IndexMap<Uuid, UserMention>>,
+    pub todo_tasks: Signal<IndexMap<Uuid, TodoTask>>,
     pub settings: Signal<Settings>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct DatabaseState {
+    #[serde(default)]
     pub members: IndexMap<Uuid, Member>,
+    #[serde(default)]
     pub taxonomy_terms: IndexMap<Uuid, TaxonomyTerm>,
+    #[serde(default)]
     pub taxonomy_assignments: IndexMap<Uuid, TaxonomyAssignment>,
+    #[serde(default)]
     pub custom_fields: IndexMap<Uuid, CustomField>,
     #[serde(deserialize_with = "deserialize_hashmap")]
+    #[serde(default)]
     pub custom_field_values: HashMap<CustomFieldValueKey, CustomFieldValue>,
+    #[serde(default)]
     pub front_periods: IndexMap<Uuid, FrontPeriod>,
+    #[serde(default)]
     pub journal_entries: IndexMap<Uuid, JournalEntry>,
+    #[serde(default)]
     pub board_posts: IndexMap<Uuid, BoardPost>,
+    #[serde(default)]
     pub user_mentions: IndexMap<Uuid, UserMention>,
+    #[serde(default)]
+    pub todo_tasks: IndexMap<Uuid, TodoTask>,
+    #[serde(default)]
     pub settings: Settings,
 }
 
@@ -129,6 +142,7 @@ impl From<Database> for DatabaseState {
             journal_entries: (value.journal_entries)(),
             board_posts: (value.board_posts)(),
             user_mentions: (value.user_mentions)(),
+            todo_tasks: (value.todo_tasks)(),
             settings: (value.settings)(),
         }
     }
@@ -146,6 +160,7 @@ impl From<DatabaseState> for Database {
             journal_entries: Signal::new(value.journal_entries),
             board_posts: Signal::new(value.board_posts),
             user_mentions: Signal::new(value.user_mentions),
+            todo_tasks: Signal::new(value.todo_tasks),
             settings: Signal::new(value.settings),
         }
     }
@@ -163,6 +178,7 @@ impl Default for DatabaseState {
             journal_entries: Default::default(),
             board_posts: Default::default(),
             user_mentions: Default::default(),
+            todo_tasks: Default::default(),
             settings: Default::default(),
         }
     }
@@ -180,6 +196,7 @@ impl Default for Database {
             journal_entries: Default::default(),
             board_posts: Default::default(),
             user_mentions: Default::default(),
+            todo_tasks: Default::default(),
             settings: Default::default(),
         }
     }
@@ -802,6 +819,24 @@ pub struct UserMention {
     )]
     pub board_post_id: Uuid,
     pub read: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TodoTask {
+    #[serde(
+        serialize_with = "serialize_uuid_compat",
+        deserialize_with = "deserialize_uuid_compat"
+    )]
+    pub id: Uuid,
+    pub title: String,
+    pub completed_at: Option<DateTime<Utc>>,
+    pub todo_type: TodoType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum TodoType {
+    Daily,
+    Single
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

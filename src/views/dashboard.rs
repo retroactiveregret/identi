@@ -18,9 +18,10 @@ pub fn Dashboard() -> Element {
                 None => rsx! {},
             }
         }
+        TodoList { db }
         BoardPosts { db, status_message }
         ul { class: "list m-4 mt-0 foreground rounded-box shadow-md",
-            li { class: "p-4 pb-2 text-xs opacity-60 tracking-wide", "Front history" }
+            li { class: "p-4 pb-2 small-heading", "Front history" }
             FrontHistoryList {
                 db,
                 status_message,

@@ -5,7 +5,7 @@ use crate::{Route, models::Database};
 pub fn Options() -> Element {
     let settings = use_context::<Signal<Database>>()().settings;
     rsx! {
-        div { class: "p-4 pb-0 text-xs opacity-60 tracking-wide", "Options" }
+        div { class: "p-4 pb-0 small-heading", "Options" }
         ul { class: "list",
             li { class: "list-row",
                 Link { to: Route::Appearance {}, "Appearance" }

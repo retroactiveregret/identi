@@ -26,6 +26,10 @@
   color: var(--color-neutral-content);
 }
 
+@utility small-heading {
+  @apply text-xs opacity-60 tracking-wide;
+}
+
 .btn {
   @apply border-0;
 }

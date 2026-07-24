@@ -7,16 +7,16 @@ edition = "2021"
 dioxus = { version = "0.7.9", features = ["router"] }
 
 # Serialization
-serde       = { version = "1", features = ["derive"] }
-serde_json  = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 # WASM / JS interop
-wasm-bindgen         = "0.2"
+wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-js-sys               = "0.3"
+js-sys = "0.3"
 
 # Logging to browser console
-log         = "0.4"
+log = "0.4"
 console_log = "1"
 chrono = { version = "0.4.45", features = ["clock", "serde"] }
 uuid = { version = "1.23.4", features = ["v4", "serde", "js"] }
@@ -27,7 +27,10 @@ ammonia = "4.1.3"
 futures = "0.3.32"
 once_cell = "1.21.4"
 indexmap = { version = "2.14.0", features = ["serde"] }
-palette = { version = "0.7.6", default-features = false, features = ["serde", "serializing"] }
+palette = { version = "0.7.6", default-features = false, features = [
+  "serde",
+  "serializing",
+] }
 dioxus-primitives = { git = "https://github.com/DioxusLabs/components", version = "0.0.1", default-features = false }
 
 [features]
@@ -37,7 +40,7 @@ desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 
 [dependencies.web-sys]
-version  = "0.3"
+version = "0.3"
 features = [
   "Window",
   "IdbFactory",
@@ -51,6 +54,7 @@ features = [
   "DomException",
   "DomStringList",
   "Event",
+  "HtmlDialogElement",
   "Blob",
   "BlobPropertyBag",
   "Url",

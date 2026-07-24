@@ -7,7 +7,7 @@ pub fn ImportExport() -> Element {
     let status_message = use_context::<Signal<Status>>();
 
     rsx! {
-        div { class: "p-4 pb-0 text-xs opacity-60 tracking-wide", "Importing and Exporting" }
+        div { class: "p-4 pb-0 small-heading", "Importing and Exporting" }
         ul { class: "list",
             li { class: "list-row",
                 DownloadButton { db, status_message }

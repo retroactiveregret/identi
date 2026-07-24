@@ -7,7 +7,7 @@ use crate::{api::file_url, components::MemberAvatar, models::*};
 pub fn MemberList(db: Signal<Database>, on_click: Callback<Uuid>) -> Element {
     let settings = (db().settings)();
     rsx! {
-        div { class: "p-4 text-xs opacity-60 tracking-wide", "Members" }
+        div { class: "p-4 small-heading", "Members" }
         ul { class: "list foreground rounded-xl shadow-md overflow-hidden m-4 mt-0",
             for (id , member) in db().members.read().iter().rev().filter(|(_, m)| !m.archived) {
                 li {

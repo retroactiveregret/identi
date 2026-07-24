@@ -7,7 +7,7 @@ pub fn Appearance() -> Element {
     let mut settings = db().settings;
     
     rsx! {
-        div { class: "p-4 pb-0 text-xs opacity-60 tracking-wide", "Appearance" }
+        div { class: "p-4 pb-0 small-heading", "Appearance" }
         ul { class: "list",
             li { class: "list-row",
                 Link { class: "", to: Route::Theme {}, "Theme" }

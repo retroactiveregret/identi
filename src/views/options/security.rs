@@ -7,7 +7,7 @@ pub fn Security() -> Element {
     let mut settings = db().settings;
     
     rsx! {
-        div { class: "p-4 pb-0 text-xs opacity-60 tracking-wide", "Security" }
+        div { class: "p-4 pb-0 small-heading", "Security" }
         ul { class: "list",
             li { class: "list-row gap-2",
                 p { class: "", "Sanitize HTML" }

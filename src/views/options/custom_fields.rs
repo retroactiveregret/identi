@@ -18,7 +18,7 @@ pub fn CustomFields() -> Element {
     
     rsx! {
         div {
-            div { class: "p-4 pb-0 text-xs opacity-60 tracking-wide", "Custom Fields" }
+            div { class: "p-4 pb-0 small-heading", "Custom Fields" }
             div { class: "w-full p-4",
                 CustomFieldForm { db, name_input, on_click: save_field }
             }

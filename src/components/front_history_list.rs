@@ -29,12 +29,12 @@ pub fn FrontHistoryList(
                     }
                 },
                 div {
-                    label { class: "label text-xs", "Start time" }
+                    label { class: "small-heading", "Start time" }
                     p { "{fp.started_at.with_timezone(&Local).format(\"%-m/%-d\")}" }
                     p { "{fp.started_at.with_timezone(&Local).format(fmt_str)}" }
                 }
                 div {
-                    label { class: "label text-xs", "End time" }
+                    label { class: "small-heading", "End time" }
                     p { "{fp.ended_at.unwrap().with_timezone(&Local).format(\"%-m/%-d\")}" }
                     p { "{fp.ended_at.unwrap().with_timezone(&Local).format(fmt_str)}" }
                 }

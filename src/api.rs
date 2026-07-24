@@ -36,6 +36,7 @@ pub fn add_member(
 
 pub fn put_member(member: &Member) -> Result<Member, JsValue> {
     info!("Putting member");
+    info!("{:#?}", member);
     let db = use_context::<Signal<Database>>();
     let member = member.to_owned();
     let mut db = db();

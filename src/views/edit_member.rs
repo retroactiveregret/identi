@@ -1,7 +1,14 @@
+use std::collections::HashMap;
+
 use dioxus::prelude::*;
 use uuid::Uuid;
 
-use crate::{api::*, components::*, models::*, Route};
+use crate::{
+    api::*,
+    components::*,
+    models::{self, *},
+    Route,
+};
 
 #[component]
 pub fn EditMember(id: Uuid) -> Element {
@@ -28,7 +35,7 @@ pub fn EditMember(id: Uuid) -> Element {
     let archived_input = use_signal(|| member.archived);
 
     let custom_field_values = use_context::<Memo<CustomFieldValueLookup>>();
-    let custom_field_inputs = db()
+    let custom_field_inputs: HashMap<Uuid, Signal<String>> = db()
         .custom_fields
         .read()
         .iter()
@@ -51,6 +58,7 @@ pub fn EditMember(id: Uuid) -> Element {
 
     let save_member = {
         let member = member.clone();
+        let custom_field_inputs = custom_field_inputs.clone();
 
         move |_| {
             let name = name_input().trim().to_string();
@@ -77,13 +85,28 @@ pub fn EditMember(id: Uuid) -> Element {
                 created_at: member.created_at,
             };
 
+            let values = custom_field_inputs
+                .iter()
+                .map(|(&field_id, sig)| CustomFieldValue {
+                    field_id,
+                    member_id: id,
+                    value: models::Value::Text(sig()),
+                })
+                .collect::<Vec<_>>();
+
             match put_member(&edited_member) {
-                Ok(_) => {
-                    status_message
-                        .write()
-                        .set_message("Updated member successfully", StatusLevel::Success);
-                    navigator().push(Route::Members {});
-                }
+                Ok(_) => match add_custom_field_values(values) {
+                    Ok(_) => {
+                        status_message
+                            .write()
+                            .set_message("Updated member successfully", StatusLevel::Success);
+                        navigator().push(Route::Members {});
+                    }
+                    Err(err) => status_message.write().set_message(
+                        format!("Failed to add custom field values: {err:?}"),
+                        StatusLevel::Error,
+                    ),
+                },
                 Err(err) => status_message.write().set_message(
                     format!("Failed to create member: {err:?}"),
                     StatusLevel::Error,

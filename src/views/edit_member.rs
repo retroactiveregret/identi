@@ -3,12 +3,7 @@ use std::collections::HashMap;
 use dioxus::prelude::*;
 use uuid::Uuid;
 
-use crate::{
-    api::*,
-    components::*,
-    models::{self, *},
-    Route,
-};
+use crate::{components::*, models::{self, *}, Route};
 
 #[component]
 pub fn EditMember(id: Uuid) -> Element {
@@ -94,8 +89,8 @@ pub fn EditMember(id: Uuid) -> Element {
                 })
                 .collect::<Vec<_>>();
 
-            match put_member(&edited_member) {
-                Ok(_) => match add_custom_field_values(values) {
+            match db().put_member(&edited_member) {
+                Ok(_) => match db().add_custom_field_values(values) {
                     Ok(_) => {
                         status_message
                             .write()

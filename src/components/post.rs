@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::{api, components::*, icons::*, models::*};
+use crate::{components::*, icons::*, models::*};
 
 #[component]
 pub fn Post(db: Signal<Database>, status_message: Signal<Status>, post: BoardPost, show_icons: bool) -> Element {
@@ -8,7 +8,7 @@ pub fn Post(db: Signal<Database>, status_message: Signal<Status>, post: BoardPos
         .iter()
         .map(|id| db().members.read()[id].clone());
 
-    let archive_post = move |_| match api::archive_post(post.id, true) {
+    let archive_post = move |_| match db().archive_post(post.id, true) {
         Ok(_) => {}
         Err(err) => status_message.write().set_message(
             format!("Error archiving post: {:#?}", err),

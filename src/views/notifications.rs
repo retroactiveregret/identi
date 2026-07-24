@@ -1,8 +1,4 @@
-use crate::{
-    api::{mark_all_notifications_read, mark_notification_read},
-    components::*,
-    models::*,
-};
+use crate::{components::*, models::*};
 use dioxus::prelude::*;
 use uuid::Uuid;
 
@@ -11,10 +7,10 @@ pub fn Notifications() -> Element {
     let db = use_context::<Signal<Database>>();
     let outline = (db().settings)().outline_notifications;
     let mark_read = move |id: Uuid| {
-        mark_notification_read(id, true).unwrap();
+        db().mark_notification_read(id, true).unwrap();
     };
     let mark_all_read = move |_| {
-        mark_all_notifications_read().unwrap();
+        db().mark_all_notifications_read().unwrap();
     };
     rsx! {
         div {

@@ -6,9 +6,7 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::{
-    api, components::{MemberAvatar, MemberPicker, Post}, icons::*, models::*,
-};
+use crate::{components::{MemberAvatar, MemberPicker, Post}, icons::*, models::*};
 
 #[component]
 pub fn BoardPosts(db: Signal<Database>, status_message: Signal<Status>) -> Element {
@@ -24,7 +22,7 @@ pub fn BoardPosts(db: Signal<Database>, status_message: Signal<Status>) -> Eleme
     let mut content_input = use_signal(|| String::new());
     let mut pinned_input = use_signal(|| false);
 
-    let create_post = move |_| match api::add_post(
+    let create_post = move |_| match db().add_post(
         author_id_input(),
         mentions_input(),
         content_input(),

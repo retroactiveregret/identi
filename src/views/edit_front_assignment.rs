@@ -1,4 +1,4 @@
-use crate::{api::switch, components::*, models::*};
+use crate::{components::*, models::*};
 use chrono::Utc;
 use dioxus::prelude::*;
 use uuid::Uuid;
@@ -31,7 +31,7 @@ pub fn EditFrontAssignment(event_id: Uuid, member_id: Uuid) -> Element {
                 assignment.note = note();
             }
         }
-        switch(Utc::now(), assignments_new).unwrap();
+        db().switch(Utc::now(), assignments_new).unwrap();
         navigator().go_back();
     };
 

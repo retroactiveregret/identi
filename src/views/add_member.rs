@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use dioxus::prelude::*;
 
-use crate::{api::*, components::*, models::*, Route};
+use crate::{components::*, models::*, Route};
 
 #[component]
 pub fn AddMember() -> Element {
@@ -37,7 +37,7 @@ pub fn AddMember() -> Element {
             }
 
             spawn(async move {
-                match add_member(name, description, None, avatar_id(), banner_id()) {
+                match db().add_member(name, description, None, avatar_id(), banner_id()) {
                     Ok(member) => {
                         let custom: Vec<CustomFieldValue> = custom_field_inputs
                             .iter()
@@ -47,7 +47,7 @@ pub fn AddMember() -> Element {
                                 value: Value::Text(s().to_string()),
                             })
                             .collect();
-                        match add_custom_field_values(custom) {
+                        match db().add_custom_field_values(custom) {
                             Ok(_) => {
                                 navigator().push(Route::Members {});
                                 status_message.write().set_message(

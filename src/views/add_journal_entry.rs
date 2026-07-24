@@ -1,4 +1,3 @@
-use crate::api::*;
 use crate::components::*;
 use crate::models::*;
 use crate::Route;
@@ -16,7 +15,7 @@ pub fn AddJournalEntry() -> Element {
     let authors_input = use_signal(|| Vec::<Uuid>::new());
     let content_warning_input = use_signal(|| None);
 
-    let save_post = move |_| match add_journal_entry(
+    let save_post = move |_| match db().add_journal_entry(
         title_input(),
         body_input(),
         Utc::now(),

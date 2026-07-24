@@ -1,5 +1,4 @@
 use crate::api::local_naive_to_utc;
-use crate::api::put_front_period;
 use crate::components::*;
 use crate::icons::*;
 use crate::models::*;
@@ -44,7 +43,7 @@ pub fn EditFrontPeriod(id: Uuid) -> Element {
         started_at.set(local_naive_to_utc(start_naive));
         ended_at.set(local_naive_to_utc(end_naive));
 
-        match put_front_period(
+        match db().put_front_period(
             fp.id,
             started_at(),
             ended_at(),

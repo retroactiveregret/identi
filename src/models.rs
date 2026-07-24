@@ -197,6 +197,343 @@ impl Database {
             .map(|(_, p)| p.clone())
             .collect()
     }
+
+    pub fn add_member(
+        &self,
+        name: String,
+        description: String,
+        color: Option<Srgb<u8>>,
+        avatar_asset_id: Option<Uuid>,
+        banner_asset_id: Option<Uuid>,
+    ) -> Result<Member, wasm_bindgen::JsValue> {
+        info!("Adding member");
+        let member = Member {
+            id: Uuid::new_v4(),
+            name,
+            description,
+            color,
+            avatar_asset_id,
+            banner_asset_id,
+            archived: false,
+            created_at: chrono::offset::Utc::now(),
+        };
+        let mut members = self.members;
+        members.write().insert(member.id, member.clone());
+        Ok(member)
+    }
+
+    pub fn put_member(&self, member: &Member) -> Result<Member, wasm_bindgen::JsValue> {
+        info!("Putting member");
+        info!("{:#?}", member);
+        let member = member.to_owned();
+        let mut members = self.members;
+        let mut binding = members.write();
+        let slot = binding
+            .get_mut(&member.id)
+            .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Member {} not found", member.id)))?;
+        *slot = member;
+        Ok(slot.to_owned())
+    }
+
+    pub fn add_custom_field_values(
+        &self,
+        values: Vec<CustomFieldValue>,
+    ) -> Result<(), wasm_bindgen::JsValue> {
+        info!("Adding custom field values {:#?}", values);
+        let mut custom_field_values = self.custom_field_values;
+        custom_field_values.write().extend(values);
+        Ok(())
+    }
+
+    pub fn end_current_period(
+        &self,
+        ended_at: DateTime<Utc>,
+    ) -> Result<Option<FrontPeriod>, wasm_bindgen::JsValue> {
+        info!("Ending current fronting period");
+        let mut front_periods = self.front_periods;
+        let mut w = front_periods.write();
+        let Some((_, fp)) = w.last_mut() else {
+            return Ok(None);
+        };
+        if fp.ended_at.is_none() {
+            fp.ended_at = Some(ended_at);
+        }
+        Ok(Some(fp.to_owned()))
+    }
+
+    pub fn add_period(
+        &self,
+        started_at: DateTime<Utc>,
+        ended_at: Option<DateTime<Utc>>,
+        assignments: Vec<FrontPeriodAssignment>,
+    ) -> Result<FrontPeriod, wasm_bindgen::JsValue> {
+        info!("Adding new fronting period");
+        let fp = FrontPeriod {
+            id: Uuid::new_v4(),
+            started_at,
+            ended_at,
+            assignments,
+        };
+        let mut front_periods = self.front_periods;
+        front_periods.write().insert(fp.id, fp.clone());
+        Ok(fp)
+    }
+
+    pub fn switch(
+        &self,
+        time: DateTime<Utc>,
+        assignments: Vec<FrontPeriodAssignment>,
+    ) -> Result<FrontPeriod, wasm_bindgen::JsValue> {
+        info!("Switching");
+        let mut front_periods = self.front_periods;
+        let mut write = front_periods.write();
+        if let Some((_, fp)) = write.last_mut() {
+            let delta = (time - fp.started_at).num_seconds();
+            if fp.ended_at.is_none() && delta >= 0 && delta < 20 {
+                fp.assignments = assignments;
+                return Ok(fp.to_owned());
+            }
+
+            if fp.ended_at.is_none() {
+                fp.ended_at = Some(time);
+            }
+        }
+
+        let fp = FrontPeriod {
+            id: Uuid::new_v4(),
+            started_at: time,
+            ended_at: None,
+            assignments,
+        };
+        write.insert(fp.id, fp.clone());
+        Ok(fp)
+    }
+
+    pub fn put_front_period(
+        &self,
+        id: Uuid,
+        started_at: DateTime<Utc>,
+        ended_at: DateTime<Utc>,
+        assignments: Vec<FrontPeriodAssignment>,
+    ) -> Result<(), wasm_bindgen::JsValue> {
+        if started_at > ended_at {
+            return Err(wasm_bindgen::JsValue::from_str("End time must be after start time"));
+        }
+        let mut front_periods = self.front_periods;
+        let idx = front_periods.read().get_index_of(&id).unwrap();
+        let mut write = front_periods.write();
+
+        {
+            match write.get_index_mut(idx - 1) {
+                Some((_, prev)) => {
+                    if prev.ended_at.unwrap() > started_at {
+                        if started_at < prev.started_at {
+                            return Err(wasm_bindgen::JsValue::from_str(
+                                "Invalid start time, please delete previous entry",
+                            ));
+                        }
+
+                        let p = prev.clone();
+                        *prev = FrontPeriod {
+                            id: p.id,
+                            started_at: p.started_at,
+                            ended_at: Some(started_at),
+                            assignments: p.assignments,
+                        }
+                    }
+                }
+                None => {}
+            }
+        }
+
+        {
+            match write.get_index_mut(idx + 1) {
+                Some((_, next)) => {
+                    if ended_at > next.started_at {
+                        if ended_at > next.ended_at.unwrap() {
+                            return Err(wasm_bindgen::JsValue::from_str(
+                                "Invalid end time, please delete proceeding entry",
+                            ));
+                        }
+
+                        let n = next.clone();
+                        *next = FrontPeriod {
+                            id: n.id,
+                            started_at: ended_at,
+                            ended_at: n.ended_at,
+                            assignments: n.assignments,
+                        }
+                    }
+                }
+                None => {}
+            }
+        }
+
+        {
+            let fp = write.get_mut(&id).unwrap();
+            *fp = FrontPeriod {
+                id,
+                started_at,
+                ended_at: Some(ended_at),
+                assignments,
+            };
+        }
+
+        Ok(())
+    }
+
+    pub fn add_journal_entry(
+        &self,
+        title: String,
+        body: String,
+        created_at: DateTime<Utc>,
+        author_member_ids: Vec<Uuid>,
+        content_warning: Option<String>,
+    ) -> Result<JournalEntry, wasm_bindgen::JsValue> {
+        let entry = JournalEntry {
+            id: Uuid::new_v4(),
+            title,
+            body,
+            created_at,
+            updated_at: None,
+            author_member_ids,
+            content_warning,
+        };
+        let mut journal_entries = self.journal_entries;
+        journal_entries.write().insert(entry.id, entry.clone());
+        Ok(entry)
+    }
+
+    pub fn put_journal_entry(
+        &self,
+        id: Uuid,
+        title: String,
+        body: String,
+        created_at: DateTime<Utc>,
+        author_member_ids: Vec<Uuid>,
+        content_warning: Option<String>,
+    ) -> Result<JournalEntry, wasm_bindgen::JsValue> {
+        let mut journal_entries = self.journal_entries;
+        let mut write = journal_entries.write();
+        let entry = write.get_mut(&id).unwrap();
+        *entry = JournalEntry {
+            id,
+            title,
+            body,
+            created_at,
+            updated_at: None,
+            author_member_ids,
+            content_warning,
+        };
+        Ok(entry.clone())
+    }
+
+    pub fn add_post(
+        &self,
+        author_id: Option<Uuid>,
+        mentions: HashSet<Uuid>,
+        content: String,
+        pinned: bool,
+        created_at: DateTime<Utc>,
+    ) -> Result<BoardPost, wasm_bindgen::JsValue> {
+        if content.is_empty() {
+            return Err(wasm_bindgen::JsValue::from_str("Post content must not be empty"));
+        }
+
+        let post = BoardPost {
+            id: Uuid::new_v4(),
+            author_id,
+            mentions,
+            content,
+            pinned,
+            archived: false,
+            created_at,
+        };
+
+        {
+            let mut board_posts_signal = self.board_posts;
+            let mut board_posts = board_posts_signal.write();
+
+            if pinned {
+                board_posts.insert(post.id, post.clone());
+            } else {
+                let insert_index = board_posts
+                    .iter()
+                    .rev()
+                    .take_while(|(_, p)| p.pinned)
+                    .count();
+
+                if insert_index == 0 {
+                    board_posts.insert(post.id, post.clone());
+                } else {
+                    let idx = board_posts.len() - insert_index;
+                    board_posts.shift_insert(idx, post.id, post.clone());
+                }
+            }
+        }
+
+        self.add_mentions(post.id, &post.mentions)?;
+        Ok(post)
+    }
+
+    pub fn add_mentions(
+        &self,
+        post_id: Uuid,
+        mentioned_users: &HashSet<Uuid>,
+    ) -> Result<(), wasm_bindgen::JsValue> {
+        let mut user_mentions = self.user_mentions;
+        for user in mentioned_users {
+            let id = Uuid::new_v4();
+            user_mentions.write().insert(
+                id,
+                UserMention {
+                    id,
+                    user_id: *user,
+                    board_post_id: post_id,
+                    read: false,
+                },
+            );
+        }
+        Ok(())
+    }
+
+    pub fn archive_post(&self, id: Uuid, archived: bool) -> Result<(), wasm_bindgen::JsValue> {
+        let mut board_posts = self.board_posts;
+        let idx = board_posts.read().get_index_of(&id).ok_or_else(|| {
+            wasm_bindgen::JsValue::from_str(&format!("Unable to find post {id}"))
+        })?;
+        let mut binding = board_posts.write();
+        let post = binding
+            .get_mut(&id)
+            .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Unable to find post {id}")))?;
+        post.archived = archived;
+        if post.pinned {
+            binding.swap_indices(idx, 0);
+        }
+        Ok(())
+    }
+
+    pub fn mark_notification_read(
+        &self,
+        id: Uuid,
+        read: bool,
+    ) -> Result<UserMention, wasm_bindgen::JsValue> {
+        let mut user_mentions = self.user_mentions;
+        let mut binding = user_mentions.write();
+        let post = binding
+            .get_mut(&id)
+            .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Unable to find mention {id}")))?;
+        post.read = read;
+        Ok(post.to_owned())
+    }
+
+    pub fn mark_all_notifications_read(&self) -> Result<(), wasm_bindgen::JsValue> {
+        let mut user_mentions = self.user_mentions;
+        for (_, mention) in user_mentions.write().iter_mut() {
+            mention.read = true;
+        }
+        Ok(())
+    }
 }
 
 fn default_created_at() -> DateTime<Utc> {

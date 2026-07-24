@@ -1,4 +1,4 @@
-use crate::{Route, api::*, components::*, models::*};
+use crate::{Route, components::*, models::*};
 use chrono::Utc;
 use dioxus::prelude::*;
 use uuid::Uuid;
@@ -15,7 +15,7 @@ pub fn JournalPost(id: Uuid) -> Element {
     let authors_input = use_signal(|| post.author_member_ids.clone());
     let content_warning_input = use_signal(|| post.content_warning.clone());
 
-    let save_post = move |_| match put_journal_entry(
+    let save_post = move |_| match db().put_journal_entry(
         id,
         title_input(),
         body_input(),

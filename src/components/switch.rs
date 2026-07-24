@@ -2,7 +2,7 @@ use chrono::Utc;
 use dioxus::prelude::*;
 use uuid::Uuid;
 
-use crate::{api::switch, components::{MemberList, MemberPicker}, icons::*, models::*};
+use crate::{api::switch, components::MemberPicker, icons::*, models::*};
 
 #[component]
 pub fn Switch(db: Signal<Database>, status_message: Signal<Status>) -> Element {

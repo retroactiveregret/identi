@@ -141,6 +141,42 @@ pub fn Appearance() -> Element {
                     }
                 }
             }
+            li { class: "list-row gap-2",
+                p { class: "", "Banner opacity" }
+                div { class: "list-col-wrap",
+                    input {
+                        class: "range range-primary",
+                        max: "100",
+                        min: "0",
+                        r#type: "range",
+                        step: 5,
+                        value: settings().banner_opacity,
+                        oninput: move |evt| {
+                            if let Ok(val) = evt.value().parse::<usize>() {
+                                settings.write().banner_opacity = val;
+                            }
+                        },
+                    }
+                    p { "{settings().banner_opacity}%" }
+                }
+            }
+            li { class: "list-row gap-2",
+                p { class: "", "Use neutral color for banner background" }
+                div { class: "list-col-wrap ",
+                    input {
+                        class: "toggle",
+                        r#type: "checkbox",
+                        checked: settings().overlay_neutral,
+                        oninput: move |evt| {
+                            if evt.value().parse().unwrap_or(false) {
+                                settings.write().overlay_neutral = true;
+                            } else {
+                                settings.write().overlay_neutral = false;
+                            }
+                        },
+                    }
+                }
+            }
         }
     }
 }

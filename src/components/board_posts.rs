@@ -7,7 +7,7 @@ use std::{
 use uuid::Uuid;
 
 use crate::{
-    api, components::{MemberAvatar, MemberList, MemberPicker, Post}, icons::*, models::*,
+    api, components::{MemberAvatar, MemberPicker, Post}, icons::*, models::*,
 };
 
 #[component]

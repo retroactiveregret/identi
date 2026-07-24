@@ -428,6 +428,8 @@ pub struct Settings {
     pub front_history_show: usize,
     pub board_show: usize,
     pub twelve_hour: bool,
+    pub banner_opacity: usize,
+    pub overlay_neutral: bool,
 
     pub sanitize_html: bool,
     pub app_lock: Option<String>,
@@ -445,6 +447,8 @@ impl Default for Settings {
             front_history_show: 10,
             board_show: 10,
             twelve_hour: true,
+            banner_opacity: 30,
+            overlay_neutral: true,
 
             sanitize_html: true,
             app_lock: None,

@@ -11,7 +11,7 @@ pub fn MemberList(db: Signal<Database>, on_click: Callback<Uuid>) -> Element {
         ul { class: "list foreground rounded-xl shadow-md overflow-hidden m-4 mt-0",
             for (id , member) in db().members.read().iter().rev().filter(|(_, m)| !m.archived) {
                 li {
-                    class: "list-row flex items-center bg-cover bg-center rounded-none relative overflow-hidden",
+                    class: "list-row flex items-center bg-cover bg-center rounded-none relative overflow-hidden after:border-b-0 after:content-none",
                     background_image: format!("url({})", file_url(member.banner_asset_id.unwrap_or_default())),
                     onclick: {
                         let id = *id;
@@ -25,12 +25,9 @@ pub fn MemberList(db: Signal<Database>, on_click: Callback<Uuid>) -> Element {
                     }
                     div {
                         class: format!(
-                            "absolute inset-0 {}",
-                            if settings.blur_banners {
-                                "bg-neutral/50 backdrop-blur-sm"
-                            } else {
-                                "bg-neutral/70"
-                            },
+                            "absolute inset-0 {} opacity-{}",
+                            if settings.overlay_neutral { "bg-neutral" } else { "bg-base-300" },
+                            100 - settings.banner_opacity,
                         ),
                     }
                 }

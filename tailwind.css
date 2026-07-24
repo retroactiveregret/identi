@@ -6,6 +6,8 @@
 }
 @plugin "@tailwindcss/typography";
 
+@source inline('opacity-{{0..100..5}}');
+
 @layer base {
   body {
     @apply bg-base-300 min-h-screen;
@@ -20,7 +22,7 @@
 }
 
 @utility neutral {
-  background-color: var(--color-neutral);
+  @apply bg-neutral;
   color: var(--color-neutral-content);
 }
 

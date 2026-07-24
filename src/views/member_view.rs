@@ -44,7 +44,7 @@ pub fn MemberView(id: Uuid) -> Element {
 
     rsx! {
         div { class: "",
-            div { class: "top-0",
+            div { class: "top-0 mt-[-env(safe-area-inset-top)]",
                 div { class: "w-screen h-48 p-0 m-0",
                     div { class: "flex w-screen h-full shadow-md bg-base-200",
                         match member.banner_asset_id {

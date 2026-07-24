@@ -31,7 +31,7 @@ pub fn MemberForm(
 
     rsx! {
         div { class: "",
-            div { class: "top-0",
+            div { class: "top-0 mt-[-env(safe-area-inset-top)]",
                 ImageUpload {
                     on_image: on_image_banner,
                     uuid: banner_id,

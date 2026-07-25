@@ -575,6 +575,18 @@ impl Database {
             mention.read = true;
         }
     }
+
+    pub fn add_todo_task(&self, title: String, todo_type: TodoType) {
+        let mut todo_tasks = self.todo_tasks;
+        let id = Uuid::new_v4();
+        let task = TodoTask {
+            id,
+            title,
+            completed_at: None,
+            todo_type,
+        };
+        todo_tasks.write().insert(id, task);
+    }
 }
 
 fn default_created_at() -> DateTime<Utc> {

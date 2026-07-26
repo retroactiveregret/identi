@@ -9,6 +9,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 use uuid::Uuid;
+use std::hash::Hash;
 
 fn serialize_uuid_compat<S>(uuid: &Uuid, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -46,13 +47,54 @@ where
     }
 }
 
+trait Keyed {
+    type Key;
+
+    fn key(&self) -> Self::Key;
+}
+
+fn vec_to_hashmap<T>(vec: Vec<T>) -> HashMap<T::Key, T>
+where
+    T: Keyed,
+    T::Key: Clone + Eq + std::hash::Hash,
+{
+    let mut map = HashMap::new();
+
+    for item in vec {
+        map.insert(item.key().clone(), item);
+    }
+
+    map
+}
+
+fn deserialize_hashmap<'de, D, T>(
+    deserializer: D,
+) -> Result<HashMap<T::Key, T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de> + Keyed,
+    T::Key: Clone + Eq + Hash + Deserialize<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Compat<K, V> where K: Eq + Hash {
+        Old(Vec<V>),
+        New(HashMap<K, V>),
+    }
+
+    match Compat::<T::Key, T>::deserialize(deserializer)? {
+        Compat::New(map) => Ok(map),
+        Compat::Old(vec) => Ok(vec_to_hashmap(vec)),
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Database {
     pub members: Signal<IndexMap<Uuid, Member>>,
     pub taxonomy_terms: Signal<IndexMap<Uuid, TaxonomyTerm>>,
     pub taxonomy_assignments: Signal<IndexMap<Uuid, TaxonomyAssignment>>,
     pub custom_fields: Signal<IndexMap<Uuid, CustomField>>,
-    pub custom_field_values: Signal<Vec<CustomFieldValue>>,
+    pub custom_field_values: Signal<HashMap<CustomFieldValueKey, CustomFieldValue>>,
     pub front_periods: Signal<IndexMap<Uuid, FrontPeriod>>,
     pub journal_entries: Signal<IndexMap<Uuid, JournalEntry>>,
     pub board_posts: Signal<IndexMap<Uuid, BoardPost>>,
@@ -66,7 +108,8 @@ pub struct DatabaseState {
     pub taxonomy_terms: IndexMap<Uuid, TaxonomyTerm>,
     pub taxonomy_assignments: IndexMap<Uuid, TaxonomyAssignment>,
     pub custom_fields: IndexMap<Uuid, CustomField>,
-    pub custom_field_values: Vec<CustomFieldValue>,
+    #[serde(deserialize_with = "deserialize_hashmap")]
+    pub custom_field_values: HashMap<CustomFieldValueKey, CustomFieldValue>,
     pub front_periods: IndexMap<Uuid, FrontPeriod>,
     pub journal_entries: IndexMap<Uuid, JournalEntry>,
     pub board_posts: IndexMap<Uuid, BoardPost>,
@@ -150,12 +193,8 @@ impl Database {
     pub fn get_active_period(&self) -> Option<FrontPeriod> {
         if let Some((_, fp)) = self.front_periods.read().last() {
             match &fp.ended_at {
-                None => {
-                    Some(fp.clone())
-                }
-                Some(_) => {
-                    None
-                }
+                None => Some(fp.clone()),
+                Some(_) => None,
             }
         } else {
             None
@@ -215,20 +254,22 @@ impl Database {
         let member = member.to_owned();
         let mut members = self.members;
         let mut binding = members.write();
-        let slot = binding
-            .get_mut(&member.id)
-            .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Member {} not found", member.id)))?;
+        let slot = binding.get_mut(&member.id).ok_or_else(|| {
+            wasm_bindgen::JsValue::from_str(&format!("Member {} not found", member.id))
+        })?;
         *slot = member;
         Ok(())
     }
 
-    pub fn add_custom_field_values(
-        &self,
-        values: Vec<CustomFieldValue>,
-    ) {
+    pub fn add_custom_field_values(&self, values: Vec<CustomFieldValue>) {
         info!("Adding custom field values {:#?}", values);
         let mut custom_field_values = self.custom_field_values;
-        custom_field_values.write().extend(values);
+        custom_field_values.write().extend(values.iter().map(|v| {
+            (CustomFieldValueKey {
+                field_id: v.field_id,
+                member_id: v.member_id,
+            }, v.to_owned())
+        }));
     }
 
     pub fn find_custom_field_value(
@@ -236,19 +277,10 @@ impl Database {
         field_id: Uuid,
         member_id: Uuid,
     ) -> Option<CustomFieldValue> {
-        for value in (self.custom_field_values)() {
-            if value.field_id == field_id && value.member_id == member_id {
-                return Some(value.clone());
-            }
-        }
-        info!("No value found for field {}", field_id);
-        return None;
+        (self.custom_field_values)().get(&CustomFieldValueKey { field_id, member_id }).cloned()
     }
 
-    pub fn end_current_period(
-        &self,
-        ended_at: DateTime<Utc>,
-    ) {
+    pub fn end_current_period(&self, ended_at: DateTime<Utc>) {
         info!("Ending current fronting period");
         let mut front_periods = self.front_periods;
         let mut w = front_periods.write();
@@ -279,11 +311,7 @@ impl Database {
         id
     }
 
-    pub fn switch(
-        &self,
-        time: DateTime<Utc>,
-        assignments: Vec<FrontPeriodAssignment>,
-    ) {
+    pub fn switch(&self, time: DateTime<Utc>, assignments: Vec<FrontPeriodAssignment>) {
         info!("Switching");
         let mut front_periods = self.front_periods;
         let mut write = front_periods.write();
@@ -316,7 +344,9 @@ impl Database {
         assignments: Vec<FrontPeriodAssignment>,
     ) -> Result<(), wasm_bindgen::JsValue> {
         if started_at > ended_at {
-            return Err(wasm_bindgen::JsValue::from_str("End time must be after start time"));
+            return Err(wasm_bindgen::JsValue::from_str(
+                "End time must be after start time",
+            ));
         }
         let mut front_periods = self.front_periods;
         let idx = front_periods.read().get_index_of(&id).unwrap();
@@ -475,11 +505,7 @@ impl Database {
         id
     }
 
-    pub fn add_mentions(
-        &self,
-        post_id: Uuid,
-        mentioned_users: &HashSet<Uuid>,
-    ) {
+    pub fn add_mentions(&self, post_id: Uuid, mentioned_users: &HashSet<Uuid>) {
         let mut user_mentions = self.user_mentions;
         for user in mentioned_users {
             let id = Uuid::new_v4();
@@ -497,9 +523,10 @@ impl Database {
 
     pub fn archive_post(&self, id: Uuid, archived: bool) -> Result<(), wasm_bindgen::JsValue> {
         let mut board_posts = self.board_posts;
-        let idx = board_posts.read().get_index_of(&id).ok_or_else(|| {
-            wasm_bindgen::JsValue::from_str(&format!("Unable to find post {id}"))
-        })?;
+        let idx = board_posts
+            .read()
+            .get_index_of(&id)
+            .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Unable to find post {id}")))?;
         let mut binding = board_posts.write();
         let post = binding
             .get_mut(&id)
@@ -518,9 +545,9 @@ impl Database {
     ) -> Result<(), wasm_bindgen::JsValue> {
         let mut user_mentions = self.user_mentions;
         let mut binding = user_mentions.write();
-        let post = binding
-            .get_mut(&id)
-            .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Unable to find mention {id}")))?;
+        let post = binding.get_mut(&id).ok_or_else(|| {
+            wasm_bindgen::JsValue::from_str(&format!("Unable to find mention {id}"))
+        })?;
         post.read = read;
         Ok(())
     }
@@ -619,6 +646,31 @@ pub struct CustomFieldValue {
     pub value: Value,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct CustomFieldValueKey {
+    #[serde(
+        serialize_with = "serialize_uuid_compat",
+        deserialize_with = "deserialize_uuid_compat"
+    )]
+    pub field_id: Uuid,
+    #[serde(
+        serialize_with = "serialize_uuid_compat",
+        deserialize_with = "deserialize_uuid_compat"
+    )]
+    pub member_id: Uuid,
+}
+
+impl Keyed for CustomFieldValue {
+    type Key = CustomFieldValueKey;
+
+    fn key(&self) -> CustomFieldValueKey {
+        CustomFieldValueKey {
+            field_id: self.field_id,
+            member_id: self.member_id,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Value {
     Text(String),
@@ -666,7 +718,7 @@ pub enum FrontRole {
     Custom(String),
 
     #[default]
-    Unknown
+    Unknown,
 }
 
 impl ToString for FrontRole {
@@ -678,7 +730,8 @@ impl ToString for FrontRole {
             FrontRole::Influencing => "influencing",
             FrontRole::Custom(s) => s,
             FrontRole::Unknown => "unknown",
-        }.into()
+        }
+        .into()
     }
 }
 
@@ -687,11 +740,11 @@ impl From<String> for FrontRole {
         let s = string.as_str();
         match s {
             "primary" => Self::Primary,
-            "cofront" => Self::CoFront, 
+            "cofront" => Self::CoFront,
             "cocon" => Self::CoCon,
             "influencing" => Self::Influencing,
             "unknown" => Self::Unknown,
-            s => Self::Custom(s.into())
+            s => Self::Custom(s.into()),
         }
     }
 }

@@ -207,7 +207,7 @@ fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
 
     let custom_field_values_lookup = use_memo(move || {
         let mut lookup = CustomFieldValueLookup(HashMap::<(Uuid, Uuid), CustomFieldValue>::new());
-        for value in &(db().custom_field_values)() {
+        for (_, value) in &(db().custom_field_values)() {
             lookup.insert((value.field_id, value.member_id), value.clone());
         }
         lookup

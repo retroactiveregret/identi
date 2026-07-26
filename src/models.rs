@@ -162,20 +162,6 @@ impl Database {
         }
     }
 
-    pub fn find_custom_field_value(
-        &self,
-        field_id: Uuid,
-        member_id: Uuid,
-    ) -> Option<CustomFieldValue> {
-        for value in (self.custom_field_values)() {
-            if value.field_id == field_id && value.member_id == member_id {
-                return Some(value.clone());
-            }
-        }
-        info!("No value found for field {}", field_id);
-        return None;
-    }
-
     pub fn get_unarchived_board_posts(&self) -> Vec<BoardPost> {
         self.board_posts
             .read()
@@ -205,10 +191,11 @@ impl Database {
         color: Option<Srgb<u8>>,
         avatar_asset_id: Option<Uuid>,
         banner_asset_id: Option<Uuid>,
-    ) -> Result<Member, wasm_bindgen::JsValue> {
+    ) -> Uuid {
         info!("Adding member");
+        let id = Uuid::new_v4();
         let member = Member {
-            id: Uuid::new_v4(),
+            id,
             name,
             description,
             color,
@@ -219,10 +206,10 @@ impl Database {
         };
         let mut members = self.members;
         members.write().insert(member.id, member.clone());
-        Ok(member)
+        id
     }
 
-    pub fn put_member(&self, member: &Member) -> Result<Member, wasm_bindgen::JsValue> {
+    pub fn put_member(&self, member: &Member) -> Result<(), wasm_bindgen::JsValue> {
         info!("Putting member");
         info!("{:#?}", member);
         let member = member.to_owned();
@@ -232,33 +219,45 @@ impl Database {
             .get_mut(&member.id)
             .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Member {} not found", member.id)))?;
         *slot = member;
-        Ok(slot.to_owned())
+        Ok(())
     }
 
     pub fn add_custom_field_values(
         &self,
         values: Vec<CustomFieldValue>,
-    ) -> Result<(), wasm_bindgen::JsValue> {
+    ) {
         info!("Adding custom field values {:#?}", values);
         let mut custom_field_values = self.custom_field_values;
         custom_field_values.write().extend(values);
-        Ok(())
+    }
+
+    pub fn find_custom_field_value(
+        &self,
+        field_id: Uuid,
+        member_id: Uuid,
+    ) -> Option<CustomFieldValue> {
+        for value in (self.custom_field_values)() {
+            if value.field_id == field_id && value.member_id == member_id {
+                return Some(value.clone());
+            }
+        }
+        info!("No value found for field {}", field_id);
+        return None;
     }
 
     pub fn end_current_period(
         &self,
         ended_at: DateTime<Utc>,
-    ) -> Result<Option<FrontPeriod>, wasm_bindgen::JsValue> {
+    ) {
         info!("Ending current fronting period");
         let mut front_periods = self.front_periods;
         let mut w = front_periods.write();
         let Some((_, fp)) = w.last_mut() else {
-            return Ok(None);
+            return;
         };
         if fp.ended_at.is_none() {
             fp.ended_at = Some(ended_at);
         }
-        Ok(Some(fp.to_owned()))
     }
 
     pub fn add_period(
@@ -266,24 +265,25 @@ impl Database {
         started_at: DateTime<Utc>,
         ended_at: Option<DateTime<Utc>>,
         assignments: Vec<FrontPeriodAssignment>,
-    ) -> Result<FrontPeriod, wasm_bindgen::JsValue> {
+    ) -> Uuid {
         info!("Adding new fronting period");
+        let id = Uuid::new_v4();
         let fp = FrontPeriod {
-            id: Uuid::new_v4(),
+            id,
             started_at,
             ended_at,
             assignments,
         };
         let mut front_periods = self.front_periods;
         front_periods.write().insert(fp.id, fp.clone());
-        Ok(fp)
+        id
     }
 
     pub fn switch(
         &self,
         time: DateTime<Utc>,
         assignments: Vec<FrontPeriodAssignment>,
-    ) -> Result<FrontPeriod, wasm_bindgen::JsValue> {
+    ) {
         info!("Switching");
         let mut front_periods = self.front_periods;
         let mut write = front_periods.write();
@@ -291,7 +291,7 @@ impl Database {
             let delta = (time - fp.started_at).num_seconds();
             if fp.ended_at.is_none() && delta >= 0 && delta < 20 {
                 fp.assignments = assignments;
-                return Ok(fp.to_owned());
+                return;
             }
 
             if fp.ended_at.is_none() {
@@ -306,7 +306,6 @@ impl Database {
             assignments,
         };
         write.insert(fp.id, fp.clone());
-        Ok(fp)
     }
 
     pub fn put_front_period(
@@ -389,9 +388,10 @@ impl Database {
         created_at: DateTime<Utc>,
         author_member_ids: Vec<Uuid>,
         content_warning: Option<String>,
-    ) -> Result<JournalEntry, wasm_bindgen::JsValue> {
+    ) -> Uuid {
+        let id = Uuid::new_v4();
         let entry = JournalEntry {
-            id: Uuid::new_v4(),
+            id,
             title,
             body,
             created_at,
@@ -401,7 +401,7 @@ impl Database {
         };
         let mut journal_entries = self.journal_entries;
         journal_entries.write().insert(entry.id, entry.clone());
-        Ok(entry)
+        id
     }
 
     pub fn put_journal_entry(
@@ -412,10 +412,12 @@ impl Database {
         created_at: DateTime<Utc>,
         author_member_ids: Vec<Uuid>,
         content_warning: Option<String>,
-    ) -> Result<JournalEntry, wasm_bindgen::JsValue> {
+    ) -> Result<(), wasm_bindgen::JsValue> {
         let mut journal_entries = self.journal_entries;
         let mut write = journal_entries.write();
-        let entry = write.get_mut(&id).unwrap();
+        let entry = write.get_mut(&id).ok_or_else(|| {
+            wasm_bindgen::JsValue::from_str(&format!("Unable to find entry {id}"))
+        })?;
         *entry = JournalEntry {
             id,
             title,
@@ -425,7 +427,7 @@ impl Database {
             author_member_ids,
             content_warning,
         };
-        Ok(entry.clone())
+        Ok(())
     }
 
     pub fn add_post(
@@ -435,13 +437,10 @@ impl Database {
         content: String,
         pinned: bool,
         created_at: DateTime<Utc>,
-    ) -> Result<BoardPost, wasm_bindgen::JsValue> {
-        if content.is_empty() {
-            return Err(wasm_bindgen::JsValue::from_str("Post content must not be empty"));
-        }
-
+    ) -> Uuid {
+        let id = Uuid::new_v4();
         let post = BoardPost {
-            id: Uuid::new_v4(),
+            id,
             author_id,
             mentions,
             content,
@@ -472,15 +471,15 @@ impl Database {
             }
         }
 
-        self.add_mentions(post.id, &post.mentions)?;
-        Ok(post)
+        self.add_mentions(post.id, &post.mentions);
+        id
     }
 
     pub fn add_mentions(
         &self,
         post_id: Uuid,
         mentioned_users: &HashSet<Uuid>,
-    ) -> Result<(), wasm_bindgen::JsValue> {
+    ) {
         let mut user_mentions = self.user_mentions;
         for user in mentioned_users {
             let id = Uuid::new_v4();
@@ -494,7 +493,6 @@ impl Database {
                 },
             );
         }
-        Ok(())
     }
 
     pub fn archive_post(&self, id: Uuid, archived: bool) -> Result<(), wasm_bindgen::JsValue> {
@@ -517,22 +515,21 @@ impl Database {
         &self,
         id: Uuid,
         read: bool,
-    ) -> Result<UserMention, wasm_bindgen::JsValue> {
+    ) -> Result<(), wasm_bindgen::JsValue> {
         let mut user_mentions = self.user_mentions;
         let mut binding = user_mentions.write();
         let post = binding
             .get_mut(&id)
             .ok_or_else(|| wasm_bindgen::JsValue::from_str(&format!("Unable to find mention {id}")))?;
         post.read = read;
-        Ok(post.to_owned())
+        Ok(())
     }
 
-    pub fn mark_all_notifications_read(&self) -> Result<(), wasm_bindgen::JsValue> {
+    pub fn mark_all_notifications_read(&self) {
         let mut user_mentions = self.user_mentions;
         for (_, mention) in user_mentions.write().iter_mut() {
             mention.read = true;
         }
-        Ok(())
     }
 }
 

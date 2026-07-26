@@ -37,37 +37,20 @@ pub fn AddMember() -> Element {
             }
 
             spawn(async move {
-                match db().add_member(name, description, None, avatar_id(), banner_id()) {
-                    Ok(member) => {
-                        let custom: Vec<CustomFieldValue> = custom_field_inputs
-                            .iter()
-                            .map(|(f, s)| CustomFieldValue {
-                                field_id: *f,
-                                member_id: member.id,
-                                value: Value::Text(s().to_string()),
-                            })
-                            .collect();
-                        match db().add_custom_field_values(custom) {
-                            Ok(_) => {
-                                navigator().push(Route::Members {});
-                                status_message.write().set_message(
-                                    "Member created successfully.",
-                                    StatusLevel::Success,
-                                );
-                            }
-                            Err(err) => status_message.write().set_message(
-                                format!("Error pushing custom field values: {:#?}", err),
-                                StatusLevel::Error,
-                            ),
-                        }
-                    }
-                    Err(err) => {
-                        status_message.write().set_message(
-                            format!("Failed to create member: {err:?}"),
-                            StatusLevel::Error,
-                        );
-                    }
-                }
+                let id = db().add_member(name, description, None, avatar_id(), banner_id());
+                let custom: Vec<CustomFieldValue> = custom_field_inputs
+                    .iter()
+                    .map(|(f, s)| CustomFieldValue {
+                        field_id: *f,
+                        member_id: id,
+                        value: Value::Text(s().to_string()),
+                    })
+                    .collect();
+                db().add_custom_field_values(custom);
+                navigator().push(Route::Members {});
+                status_message
+                    .write()
+                    .set_message("Member created successfully.", StatusLevel::Success);
             });
         }
     };

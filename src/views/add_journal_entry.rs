@@ -15,19 +15,21 @@ pub fn AddJournalEntry() -> Element {
     let authors_input = use_signal(|| Vec::<Uuid>::new());
     let content_warning_input = use_signal(|| None);
 
-    let save_post = move |_| match db().add_journal_entry(
-        title_input(),
-        body_input(),
-        Utc::now(),
-        authors_input(),
-        content_warning_input(),
-    ) {
-        Ok(_) => {
+    let save_post = move |_| {
+        if !body_input.is_empty() {
+            db().add_journal_entry(
+                title_input(),
+                body_input(),
+                Utc::now(),
+                authors_input(),
+                content_warning_input(),
+            );
             navigator().push(Route::Journal {});
+        } else {
+            status_message
+                .write()
+                .set_message("Please add content to the post", StatusLevel::Error);
         }
-        Err(e) => status_message
-            .write()
-            .set_message(format!("Error creating post: {:#?}", e), StatusLevel::Error),
     };
 
     rsx! {

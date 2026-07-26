@@ -6,12 +6,8 @@ use uuid::Uuid;
 pub fn Notifications() -> Element {
     let db = use_context::<Signal<Database>>();
     let outline = (db().settings)().outline_notifications;
-    let mark_read = move |id: Uuid| {
-        db().mark_notification_read(id, true).unwrap();
-    };
-    let mark_all_read = move |_| {
-        db().mark_all_notifications_read().unwrap();
-    };
+    let mark_read = move |id: Uuid| db().mark_notification_read(id, true).unwrap();
+    let mark_all_read = move |_| db().mark_all_notifications_read();
     rsx! {
         div {
             div { class: "p-4 text-xs opacity-60 tracking-wide", "Notifications" }

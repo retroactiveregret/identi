@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use dioxus::prelude::*;
 use uuid::Uuid;
 
-use crate::{components::*, models::{self, *}, Route};
+use crate::{
+    components::*,
+    models::{self, *},
+    Route,
+};
 
 #[component]
 pub fn EditMember(id: Uuid) -> Element {
@@ -90,18 +94,13 @@ pub fn EditMember(id: Uuid) -> Element {
                 .collect::<Vec<_>>();
 
             match db().put_member(&edited_member) {
-                Ok(_) => match db().add_custom_field_values(values) {
-                    Ok(_) => {
-                        status_message
-                            .write()
-                            .set_message("Updated member successfully", StatusLevel::Success);
-                        navigator().push(Route::Members {});
-                    }
-                    Err(err) => status_message.write().set_message(
-                        format!("Failed to add custom field values: {err:?}"),
-                        StatusLevel::Error,
-                    ),
-                },
+                Ok(_) => {
+                    db().add_custom_field_values(values);
+                    status_message
+                        .write()
+                        .set_message("Updated member successfully", StatusLevel::Success);
+                    navigator().push(Route::Members {});
+                }
                 Err(err) => status_message.write().set_message(
                     format!("Failed to create member: {err:?}"),
                     StatusLevel::Error,

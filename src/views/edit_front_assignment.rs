@@ -31,7 +31,7 @@ pub fn EditFrontAssignment(event_id: Uuid, member_id: Uuid) -> Element {
                 assignment.note = note();
             }
         }
-        db().switch(Utc::now(), assignments_new).unwrap();
+        db().switch(Utc::now(), assignments_new);
         navigator().go_back();
     };
 

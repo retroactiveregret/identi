@@ -27,18 +27,17 @@ pub fn TodoList(db: Signal<Database>) -> Element {
                     for (_ , task) in tasks().iter().filter(|(_, t)| t.todo_type == TodoType::Daily) {
                         TodoItem { task: task.clone() }
                     }
-                    li { class: "list-row hidden" }
-                }
-                div { class: "p-4 pb-0 pt-0 flex flex-row justify-between items-center",
-                    span { class: "small-heading", "One-off" }
-                    button {
-                        Icon {
-                            size: 24,
-                            data: material_symbols_light::AddRounded,
-                        }
-                    }
                 }
                 ul { class: "list",
+                    div { class: "p-4 pb-0 pt-0 flex flex-row justify-between items-center",
+                        span { class: "small-heading", "One-off" }
+                        button { onclick: move |_| open_daily.set(true),
+                            Icon {
+                                size: 24,
+                                data: material_symbols_light::AddRounded,
+                            }
+                        }
+                    }
                     for (_ , task) in tasks().iter().filter(|(_, t)| t.todo_type == TodoType::Single) {
                         TodoItem { task: task.clone() }
                     }

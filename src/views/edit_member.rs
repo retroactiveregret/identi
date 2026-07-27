@@ -80,7 +80,7 @@ pub fn EditMember(id: Uuid) -> Element {
                 color: member.color,
                 avatar_asset_id: avatar,
                 banner_asset_id: banner,
-                archived: false,
+                archived: archived_input(),
                 created_at: member.created_at,
             };
 

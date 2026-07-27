@@ -54,12 +54,14 @@ fn JournalEntryEditAuthorList(
         div { class: "flex flex-row overflow-x-scroll gap-2",
             button {
                 class: "btn w-12 h-12 foreground rounded-box flex justify-center items-center p-0",
+                aria_label: "Add author",
                 onclick: move |_| show_select.set(true),
                 Icon { size: 24, data: material_symbols_light::AddRounded }
             }
 
             for member in authors() {
                 button {
+                    aria_label: "Remove author {member.name}",
                     onclick: move |_| {
                         authors_input
                             .set(
@@ -99,7 +101,10 @@ fn JournalEntryEditContentWarning(
 ) -> Element {
     rsx! {
         div { class: "flex flex-row h-12 btn btn-ghost",
-            label { class: "flex items-center h-12", r#for: "content-warning",
+            label {
+                class: "flex items-center h-12",
+                r#for: "content-warning",
+                aria_label: "Toggle content warning",
                 input {
                     class: "checkbox pointer-events-none",
                     r#type: "checkbox",

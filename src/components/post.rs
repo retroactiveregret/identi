@@ -46,7 +46,7 @@ pub fn Post(db: Signal<Database>, status_message: Signal<Status>, post: BoardPos
                     }
                 }
                 if show_icons {
-                    button { onclick: archive_post,
+                    button { aria_label: "Archive post", onclick: archive_post,
                         Icon {
                             class: "opacity-60",
                             data: material_symbols_light::ArchiveOutlineRounded,

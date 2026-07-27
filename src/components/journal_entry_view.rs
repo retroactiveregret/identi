@@ -94,7 +94,11 @@ pub fn JournalEntryView(
                 }
             }
         }
-        div { class: "fab bottom-34", tabindex: "0", role: "button",
+        div {
+            class: "fab bottom-34",
+            tabindex: "0",
+            role: "button",
+            aria_label: "Edit entry",
             button { class: "btn btn-secondary w-12 h-12 p-0",
                 Link { to: Route::JournalPost { id: entry.id },
                     Icon { size: 32, data: mdi_light::Pencil }
@@ -102,7 +106,11 @@ pub fn JournalEntryView(
             }
         }
 
-        div { class: "fab bottom-20", tabindex: "0", role: "button",
+        div {
+            class: "fab bottom-20",
+            tabindex: "0",
+            role: "button",
+            aria_label: "Add entry",
             button { class: "btn w-12 h-12 p-0",
                 Link { to: Route::AddJournalEntry {},
                     Icon { size: 32, data: material_symbols_light::AddRounded }

@@ -40,6 +40,7 @@ pub fn MemberForm(
                     div { class: "w-screen h-48 p-0 m-0",
                         label {
                             class: "flex w-screen h-full shadow-md bg-base-200",
+                            aria_label: if banner_id().is_some() { "Change banner image" } else { "Upload banner image" },
                             r#for: "banner-upload",
                             match banner_id() {
                                 Some(banner) => rsx! {
@@ -61,7 +62,10 @@ pub fn MemberForm(
                     status_message,
                     id: "avatar-upload",
                     div { class: "w-full flex justify-center items-center",
-                        label { class: "z-10 -mt-24", r#for: "avatar-upload",
+                        label {
+                            class: "z-10 -mt-24",
+                            aria_label: if avatar_id().is_some() { "Change avatar image" } else { "Upload avatar image" },
+                            r#for: "avatar-upload",
                             MemberAvatar { img_id: avatar_id(), size: 48 }
                         }
                     }

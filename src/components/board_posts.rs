@@ -69,15 +69,17 @@ pub fn BoardPosts(db: Signal<Database>, status_message: Signal<Status>) -> Eleme
             div { class: "flex flex-row justify-between",
                 div { class: "inline ml-2 mr-2",
                     if page() > 0 {
-                        label {
+                        button {
                             class: "m-2 label text-xs",
+                            aria_label: "Previous page",
                             onclick: move |_| page.sub_assign(1),
                             "Prev"
                         }
                     }
                     if (page() + 1) * max_show < board_len() {
-                        label {
+                        button {
                             class: "m-2 label text-xs",
+                            aria_label: "Next page",
                             onclick: move |_| page.add_assign(1),
                             "Next"
                         }
@@ -126,6 +128,7 @@ fn EditBoardPost(
                 div { class: "mb-2 mt-1 flex flex-row justify-between w-full items-center",
                     button {
                         class: "btn btn-square rounded-box h-12 w-12",
+                        aria_label: if author_avatar().is_some() { "Change post author" } else { "Select post author" },
                         onclick: move |_| show_author_select.set(true),
                         if let Some(avatar) = author_avatar() {
                             MemberAvatar { img_id: avatar, size: 12 }
@@ -167,6 +170,7 @@ fn EditBoardPost(
                     }
                     button {
                         class: "btn-circle",
+                        aria_label: "Add mentioned member",
                         onclick: move |_| show_mention_select.set(true),
                         Icon { data: material_symbols_light::AddRounded }
                     }

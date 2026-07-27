@@ -8,6 +8,7 @@ pub fn DateSelect(mut date: Signal<NaiveDate>) -> Element {
         div { class: "w-full p-5 foreground flex justify-between items-center",
             button {
                 class: "btn-ghost",
+                aria_label: "Previous date",
                 onclick: move |_| date.set(date().pred_opt().unwrap()),
                 Icon { data: material_symbols_light::ArrowBackIosRounded }
             }
@@ -19,6 +20,7 @@ pub fn DateSelect(mut date: Signal<NaiveDate>) -> Element {
             }
             button {
                 class: "btn-ghost",
+                aria_label: "Next date",
                 onclick: move |_| date.set(date().succ_opt().unwrap()),
                 Icon { data: material_symbols_light::ArrowForwardIosRounded }
             }

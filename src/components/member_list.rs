@@ -13,6 +13,8 @@ pub fn MemberList(db: Signal<Database>, on_click: Callback<Uuid>) -> Element {
                 li {
                     class: "list-row flex items-center bg-cover bg-center rounded-none relative overflow-hidden after:border-b-0 after:content-none",
                     background_image: format!("url({})", file_url(member.banner_asset_id.unwrap_or_default())),
+                    role: "button",
+                    aria_label: "View {member.name}",
                     onclick: {
                         let id = *id;
                         move |_| on_click.call(id)
@@ -39,6 +41,8 @@ pub fn MemberList(db: Signal<Database>, on_click: Callback<Uuid>) -> Element {
                 li {
                     class: "list-row flex items-center bg-cover bg-center rounded-none relative overflow-hidden after:border-b-0 after:content-none",
                     background_image: format!("url({})", file_url(member.banner_asset_id.unwrap_or_default())),
+                    role: "button",
+                    aria_label: "View {member.name}",
                     onclick: {
                         let id = *id;
                         move |_| on_click.call(id)

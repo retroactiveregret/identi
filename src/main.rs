@@ -9,8 +9,8 @@ mod models;
 mod views;
 
 use chrono::NaiveDate;
-use dioxus::prelude::*;
-use std::collections::HashMap;
+use dioxus::{prelude::*, web::{Config, WebHistory}};
+use std::{collections::HashMap, rc::Rc};
 use uuid::Uuid;
 
 use crate::{
@@ -23,7 +23,14 @@ use crate::{
 };
 
 fn main() {
-    dioxus::launch(App);
+    let history = WebHistory::new(
+        Some("/identi".to_string()),
+        true,
+    );
+
+    dioxus::LaunchBuilder::new()
+        .with_cfg(Config::new().history(Rc::new(history)))
+        .launch(App);
 }
 
 #[derive(Debug, Clone, Routable, PartialEq)]

@@ -111,7 +111,7 @@ fn App() -> Element {
 
 #[component]
 fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
-    let db = use_context_provider(|| {
+    let mut db = use_context_provider(|| {
         let initial = loaded
             .write()
             .take()
@@ -127,6 +127,7 @@ fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
         let _ = db().taxonomy_assignments.read();
         let _ = db().custom_fields.read();
         let _ = db().custom_field_values.read();
+        let _ = db().todo_tasks.read();
         let _ = db().front_periods.read();
         let _ = db().journal_entries.read();
         let _ = db().board_posts.read();
@@ -263,6 +264,13 @@ fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
             eruda_set_button_visible(true);
         } else {
             eruda_set_button_visible(false);
+        }
+    });
+
+    use_future(move || async move {
+        loop {
+            db.write().cleanup_todos();
+            gloo_timers::future::sleep(std::time::Duration::from_secs(60)).await;
         }
     });
 

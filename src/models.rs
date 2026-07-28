@@ -1,4 +1,4 @@
-use chrono::{self, DateTime, NaiveDate, Utc};
+use chrono::{self, DateTime, Duration, Local, NaiveDate, Utc};
 use dioxus::{logger::tracing::info, prelude::*};
 use indexmap::IndexMap;
 use palette::Srgb;
@@ -587,6 +587,32 @@ impl Database {
         };
         todo_tasks.write().insert(id, task);
     }
+
+    pub fn cleanup_todos(&self) {
+        let now = Utc::now();
+        let today_local = Local::now().date_naive();
+
+        let mut todo_tasks = self.todo_tasks;
+
+        todo_tasks.write().retain(|_, task| match task.todo_type {
+            TodoType::Single => match task.completed_at {
+                Some(completed_at) => now - completed_at < Duration::hours(24),
+                None => true,
+            },
+            TodoType::Daily => true,
+        });
+
+        for task in todo_tasks.write().values_mut() {
+            if task.todo_type == TodoType::Daily {
+                if let Some(completed_at) = task.completed_at {
+                    let completed_local_date = completed_at.with_timezone(&Local).date_naive();
+                    if completed_local_date != today_local {
+                        task.completed_at = None;
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn default_created_at() -> DateTime<Utc> {
@@ -864,6 +890,7 @@ pub struct Settings {
     pub twelve_hour: bool,
     pub banner_opacity: usize,
     pub overlay_neutral: bool,
+    pub show_todo: bool,
 
     pub sanitize_html: bool,
     pub app_lock: Option<String>,
@@ -883,6 +910,7 @@ impl Default for Settings {
             twelve_hour: true,
             banner_opacity: 30,
             overlay_neutral: true,
+            show_todo: true,
 
             sanitize_html: true,
             app_lock: None,

@@ -177,6 +177,23 @@ pub fn Appearance() -> Element {
                     }
                 }
             }
+            li { class: "list-row gap-2",
+                p { class: "", "Show to-do" }
+                div { class: "list-col-wrap ",
+                    input {
+                        class: "toggle",
+                        r#type: "checkbox",
+                        checked: settings().show_todo,
+                        oninput: move |evt| {
+                            if evt.value().parse().unwrap_or(false) {
+                                settings.write().show_todo = true;
+                            } else {
+                                settings.write().show_todo = false;
+                            }
+                        },
+                    }
+                }
+            }
         }
     }
 }

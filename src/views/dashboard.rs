@@ -18,7 +18,9 @@ pub fn Dashboard() -> Element {
                 None => rsx! {},
             }
         }
-        TodoList { db }
+        if (db().settings)().show_todo {
+            TodoList { db }
+        }
         BoardPosts { db, status_message }
         ul { class: "list m-4 mt-0 foreground rounded-box shadow-md",
             li { class: "p-4 pb-2 small-heading", "Front history" }

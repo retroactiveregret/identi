@@ -1,5 +1,6 @@
 use dioxus::logger::tracing::info;
 use js_sys::Promise;
+use serde::Serialize;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{IdbDatabase, IdbOpenDbRequest, IdbRequest, IdbTransaction, IdbTransactionMode};
@@ -164,18 +165,25 @@ pub async fn load_database() -> Result<DatabaseState, JsValue> {
     if value.is_null() || value.is_undefined() {
         return Ok(DatabaseState::default());
     }
-
+ 
     let json = value.as_string().ok_or_else(|| {
         JsValue::from_str("Expected a JSON string in IndexedDB; got a different type")
     })?;
 
-    serde_json::from_str::<DatabaseState>(&json)
-        .map_err(|e| JsValue::from_str(&format!("Deserialization error: {e}")))
+    let de = &mut serde_json::Deserializer::from_str(&json);
+    let result: Result<DatabaseState, _> = serde_path_to_error::deserialize(de);
+    result.map_err(|e| JsValue::from_str(&format!("Deserialization error with path {:#?}", e.path().to_string())))
 }
 
 pub async fn save_database(database: &DatabaseState) -> Result<(), JsValue> {
-    let json = serde_json::to_string(database)
-        .map_err(|e| JsValue::from_str(&format!("Serialization error: {e}")))?;
+    let mut out = Vec::new();
+    let ser = &mut serde_json::Serializer::new(&mut out);
+
+    let mut track = serde_path_to_error::Track::new();
+    let ps = serde_path_to_error::Serializer::new(ser, &mut track);
+
+    database.serialize(ps).map_err(|e| JsValue::from_str(&format!("Serialization error: {:#?}\n Path: {:#?}", e, track.path().to_string())))?;
+    let json = String::from_utf8(out).unwrap();
 
     let db = open_db().await?;
     let tx = db.transaction_with_str_and_mode(STORE_NAME, IdbTransactionMode::Readwrite)?;

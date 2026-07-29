@@ -88,6 +88,19 @@ where
     }
 }
 
+fn serialize_hashmap<S, T>(
+    map: &HashMap<T::Key, T>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T: Serialize + Keyed + Clone,
+    T::Key: Eq + Hash,
+{
+    let values: Vec<_> = map.values().cloned().collect();
+    values.serialize(serializer)
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Database {
     pub members: Signal<IndexMap<Uuid, Member>>,
@@ -113,8 +126,11 @@ pub struct DatabaseState {
     pub taxonomy_assignments: IndexMap<Uuid, TaxonomyAssignment>,
     #[serde(default)]
     pub custom_fields: IndexMap<Uuid, CustomField>,
-    #[serde(deserialize_with = "deserialize_hashmap")]
-    #[serde(default)]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_hashmap",
+        serialize_with = "serialize_hashmap"
+    )]
     pub custom_field_values: HashMap<CustomFieldValueKey, CustomFieldValue>,
     #[serde(default)]
     pub front_periods: IndexMap<Uuid, FrontPeriod>,

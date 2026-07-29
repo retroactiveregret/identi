@@ -1,7 +1,7 @@
 {
   "name": "Identi",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/identi/",
+  "scope": "/identi/",
   "display": "standalone",
   "orientation": "portrait-primary"
 }

@@ -12,7 +12,9 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <link rel="manifest" href="/manifest.json" />
+  <base href="/identi/">
+
+  <link rel="manifest" href="manifest.json" />
 
   <link data-trunk rel="rust" data-wasm-opt="z" />
 
@@ -23,7 +25,7 @@
   <link data-trunk rel="copy-file" href="sw.js" />
 
   <link data-trunk rel="copy-file" href="node_modules/eruda/eruda.js" />
-  <script src="/eruda.js"></script>
+  <script src="eruda.js"></script>
 
   <title>Identi</title>
 </head>
@@ -33,7 +35,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       console.log("serviceWorker found");
-      navigator.serviceWorker.register("/sw.js", {
+      navigator.serviceWorker.register("sw.js", {
         type: "module",
       }).catch((err) => {
         console.warn('Service worker registration failed:', err);

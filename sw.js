@@ -6,20 +6,21 @@ const DYNAMIC_CACHE = `app-dynamic-${APP_VERSION}`
 const KNOWN_CACHES = [STATIC_CACHE, DYNAMIC_CACHE]
 
 
+const BASE_PATH = new URL(self.registration.scope).pathname
 const FILE_DB_NAME = 'identi_files_db'
 const FILE_DB_VERSION = 1
 const FILE_STORE = 'files'
 const META_STORE = 'meta'
-const FILE_API_BASE = '/files'
+const FILE_API_BASE = `${BASE_PATH}files`.replace(/\/+/g, '/')
 
 
 const LEGACY_DB_NAME = 'dioxus_app_images_db'
 const LEGACY_STORE = 'images'
-const LEGACY_API_BASE = '/images'
+const LEGACY_API_BASE = './images'
 
 const MIGRATION_FLAG_KEY = 'migrated_from_dioxus_app_images_db'
 
-const PRECACHE_URLS = ['/', '/index.html']
+const PRECACHE_URLS = ['./', './index.html']
 
 const DEV =
   self.location.hostname === "localhost" ||

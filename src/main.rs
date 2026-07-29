@@ -9,24 +9,19 @@ mod models;
 mod views;
 
 use chrono::NaiveDate;
-use dioxus::{prelude::*, web::{Config, WebHistory}};
+use dioxus::{
+    prelude::*,
+    web::{Config, WebHistory},
+};
 use std::{collections::HashMap, rc::Rc};
 use uuid::Uuid;
 
 use crate::{
-    api::{eruda::*, request_persistent_storage},
-    components::{NotificationPopup, StatusMessage},
-    db::{load_database, save_database},
-    icons::*,
-    models::*,
-    views::*,
+    api::{eruda::*, request_persistent_storage}, components::{DownloadButton, Modal, NotificationPopup, StatusMessage}, db::{load_database, save_database}, icons::*, models::*, views::*,
 };
 
 fn main() {
-    let history = WebHistory::new(
-        Some("/identi".to_string()),
-        true,
-    );
+    let history = WebHistory::new(Some("/identi".to_string()), true);
 
     dioxus::LaunchBuilder::new()
         .with_cfg(Config::new().history(Rc::new(history)))
@@ -120,6 +115,9 @@ fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
     });
     let mut status_message = use_context_provider(|| Signal::new(Status::default()));
 
+    let mut error_open = use_signal(|| false);
+    let mut error_text = use_signal(|| String::new());
+
     let mut is_first_run = use_signal(|| true);
     use_effect(move || {
         let _ = db().members.read();
@@ -142,7 +140,11 @@ fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
         spawn(async move {
             match save_database(&DatabaseState::from(db())).await {
                 Ok(_) => {}
-                Err(e) => info!("{:#?}", e),
+                Err(e) => {
+                    info!("{:#?}", e);
+                    error_open.set(true);
+                    error_text.set(format!("{:#?}", e));
+                }
             }
         });
     });
@@ -275,6 +277,23 @@ fn AppLoaded(mut loaded: Signal<Option<DatabaseState>>) -> Element {
     });
 
     rsx! {
+        Modal { id: "error-modal", open: error_open,
+            div { class: "modal-box",
+                span { class: "text-xl font-bold",
+                    Icon {
+                        size: 32,
+                        data: material_symbols_light::WarningOutlineRounded,
+                    }
+                    "There was an error saving the database"
+                }
+                p { class: "py-4", "Export your database now to avoid data loss" }
+                div { class: "modal-action",
+                    div { class: "btn",
+                        DownloadButton { db, status_message }
+                    }
+                }
+            }
+        }
         Router::<Route> {}
     }
 }

@@ -176,7 +176,6 @@ pub async fn load_database() -> Result<DatabaseState, JsValue> {
 }
 
 pub async fn save_database(database: &DatabaseState) -> Result<(), JsValue> {
-    return Err(JsValue::from_str("Meow"));
     let mut out = Vec::new();
     let ser = &mut serde_json::Serializer::new(&mut out);
 

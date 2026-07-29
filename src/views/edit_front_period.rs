@@ -14,6 +14,8 @@ pub fn EditFrontPeriod(id: Uuid) -> Element {
     let mut status_message = use_context::<Signal<Status>>();
     let mut show_select = use_signal(|| false);
 
+    let mut delete_warn = use_signal(|| false);
+
     let front_periods = (db().front_periods)();
     let fp = front_periods
         .get(&id)
@@ -70,6 +72,7 @@ pub fn EditFrontPeriod(id: Uuid) -> Element {
     };
 
     let delete = move |_| {
+        delete_warn.set(false);
         let mut binding = db();
         let mut write = binding.front_periods.write();
         write.shift_remove(&id).unwrap();
@@ -133,20 +136,27 @@ pub fn EditFrontPeriod(id: Uuid) -> Element {
             }
 
             div { class: "flex flex-row justify-between w-full",
-                label { class: "btn btn-error w-[5rem]", r#for: "delete-warn", "Delete" }
+                button {
+                    class: "btn btn-error w-[5rem]",
+                    onclick: move |_| delete_warn.set(true),
+                    "Delete"
+                }
                 button { class: "btn btn-primary w-[5rem]", onclick: save, "Save" }
             }
         }
 
         MemberPicker { db, show_select, on_click: add_member }
 
-        input { class: "modal-toggle", id: "delete-warn", r#type: "checkbox" }
-        div { class: "modal", role: "dialog",
+        Modal { id: "delete-warn-modal", open: delete_warn,
             div { class: "modal-box",
                 h3 { class: "text-lg font-bold", "Really delete switch event?" }
                 p { class: "py-4", "This action cannot be undone." }
                 div { class: "modal-action flex flex-row justify-between w-full",
-                    label { class: "btn", r#for: "delete-warn", "Cancel" }
+                    button {
+                        class: "btn",
+                        onclick: move |_| delete_warn.set(false),
+                        "Cancel"
+                    }
                     button { class: "btn btn-error", onclick: delete, "Delete" }
                 }
             }

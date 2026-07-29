@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use uuid::Uuid;
 
-use crate::{components::{MemberAvatar, MemberPicker}, icons::*, models::*};
+use crate::{components::{MemberAvatar, MemberPicker, Modal}, icons::*, models::*};
 
 #[component]
 pub fn JournalEntryEdit(
@@ -99,12 +99,13 @@ fn JournalEntryEditContentWarning(
     content_warning_tmp: Signal<String>,
     checked: Memo<bool>,
 ) -> Element {
+    let mut open = use_signal(|| false);
     rsx! {
         div { class: "flex flex-row h-12 btn btn-ghost",
-            label {
+            button {
                 class: "flex items-center h-12",
-                r#for: "content-warning",
                 aria_label: "Toggle content warning",
+                onclick: move |_| open.set(true),
                 input {
                     class: "checkbox pointer-events-none",
                     r#type: "checkbox",
@@ -116,13 +117,7 @@ fn JournalEntryEditContentWarning(
                 }
             }
         }
-
-        input {
-            class: "modal-toggle",
-            id: "content-warning",
-            r#type: "checkbox",
-        }
-        div { class: "modal", role: "dialog",
+        Modal { id: "content-warning-modal", open,
             div { class: "modal-box",
                 div { class: "py-4 flex flex-row justify-between",
                     span { "Add content warning to post?" }
@@ -148,11 +143,11 @@ fn JournalEntryEditContentWarning(
                     oninput: move |evt| content_warning_tmp.set(evt.value()),
                 }
                 div { class: "flex flex-row justify-between mt-4",
-                    label { class: "btn", r#for: "content-warning", "Cancel" }
-                    label {
+                    button { class: "btn", onclick: move |_| open.set(false), "Cancel" }
+                    button {
                         class: "btn",
-                        r#for: "content-warning",
                         onclick: move |_| {
+                            open.set(false);
                             content_warning_input
                                 .set(if checked() { Some(content_warning_tmp()) } else { None })
                         },
@@ -160,7 +155,7 @@ fn JournalEntryEditContentWarning(
                     }
                 }
             }
-            label { class: "modal-backdrop", r#for: "content-warning", "Close" }
+        
         }
     }
 }

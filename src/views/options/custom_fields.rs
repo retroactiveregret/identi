@@ -24,39 +24,29 @@ pub fn CustomFields() -> Element {
             }
             ul { class: "list w-full",
                 for (i , (_ , field)) in (db().custom_fields)().iter().enumerate() {
-                    li { class: "list-row w-full",
-                        span { class: "list-col-grow", "{field.name}" }
-                        label { class: "opacity-60", r#for: "delete_modal_{i}",
-                            Icon {
-                                size: 24,
-                                data: material_symbols_light::DeleteOutlineRounded,
-                            }
-                        }
-                    }
-                }
-            }
-        }
+                    {
+                        let mut open = use_signal(|| false);
 
-        for (i , (_ , field)) in (db().custom_fields)().iter().enumerate() {
-            input {
-                class: "modal-toggle",
-                id: "delete_modal_{i}",
-                r#type: "checkbox",
-            }
-            div { class: "modal", role: "dialog",
-                div { class: "modal-box",
-                    h3 { class: "text-lg font-bold",
-                        "Are you sure you want to delete custom field {field.name}?"
-                    }
-                    p { class: "py-4",
-                        "This will make all data for {field.name} inaccessible. This action cannot be undone."
-                    }
-                    div { class: "modal-action",
-                        label { class: "btn", r#for: "delete_modal_{i}", "Cancel" }
-                        button {
-                            class: "btn btn-error",
-                            onclick: move |_| delete_field(i),
-                            "Delete"
+                        rsx! {
+                            li { class: "list-row w-full",
+                                span { class: "list-col-grow", "{field.name}" }
+                                button { class: "opacity-60", onclick: move |_| open.set(true),
+                                    Icon { size: 24, data: material_symbols_light::DeleteOutlineRounded }
+                                }
+                            }
+
+                            Modal { id: "delete_modal_{i}", open,
+                                div { class: "modal-box",
+                                    h3 { class: "text-lg font-bold", "Are you sure you want to delete custom field {field.name}?" }
+                                    p { class: "py-4",
+                                        "This will make all data for {field.name} inaccessible. This action cannot be undone."
+                                    }
+                                    div { class: "modal-action flex flex-row justify-between w-full",
+                                        button { class: "btn", onclick: move |_| open.set(false), "Cancel" }
+                                        button { class: "btn btn-error", onclick: move |_| delete_field(i), "Delete" }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

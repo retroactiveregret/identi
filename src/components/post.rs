@@ -37,7 +37,11 @@ pub fn Post(db: Signal<Database>, status_message: Signal<Status>, post: BoardPos
                 }
             }
 
-            Markdown { class: "prose", text: post.content }
+            Markdown {
+                class: "prose",
+                text: post.content,
+                sanitize: (db().settings)().sanitize_html,
+            }
 
             div { class: "flex flex-row mt-2",
                 div { class: "flex flex-row gap-2 overflow-x-scroll grow",

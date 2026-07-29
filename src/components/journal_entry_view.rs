@@ -90,7 +90,11 @@ pub fn JournalEntryView(
                 }
             } else {
                 div { class: "mt-7 flex flex-col",
-                    Markdown { text: "{entry.body}", class: "prose grow" }
+                    Markdown {
+                        text: "{entry.body}",
+                        class: "prose grow",
+                        sanitize: (db().settings)().sanitize_html,
+                    }
                 }
             }
         }

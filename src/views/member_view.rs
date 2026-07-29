@@ -70,6 +70,7 @@ pub fn MemberView(id: Uuid) -> Element {
                         Markdown {
                             class: "w-full prose",
                             text: member.description.clone(),
+                            sanitize: (db().settings)().sanitize_html,
                         }
 
                         for (_ , field) in (db().custom_fields)()

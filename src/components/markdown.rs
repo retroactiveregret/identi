@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 #[component]
 pub fn Markdown(
     text: String,
-    #[props(default)] sanitize: bool,
+    #[props(default = true)] sanitize: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
     let parser_options = pulldown_cmark::Options::all();

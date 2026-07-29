@@ -1,10 +1,12 @@
 use dioxus::prelude::*;
-use crate::{models::Database};
+use crate::{components::Modal, models::Database};
 
 #[component]
 pub fn Security() -> Element {
     let db = use_context::<Signal<Database>>();
     let mut settings = db().settings;
+
+    let mut open_warning = use_signal(|| false);
     
     rsx! {
         div { class: "p-4 pb-0 small-heading", "Security" }
@@ -27,7 +29,11 @@ pub fn Security() -> Element {
                     if !settings().sanitize_html {
                         p { class: "text-error py-2",
                             "Disabling this can put your app at risk. "
-                            label { class: "link", r#for: "warning-modal", "Learn more" }
+                            button {
+                                class: "link",
+                                onclick: move |_| open_warning.set(true),
+                                "Learn more"
+                            }
                         }
                     }
                 }
@@ -52,22 +58,27 @@ pub fn Security() -> Element {
             }
         }
 
-        input { class: "modal-toggle", id: "warning-modal", r#type: "checkbox" }
-        div { class: "modal", role: "dialog",
+        Modal { id: "sanitization-warning-modal", open: open_warning,
             div { class: "modal-box",
                 h3 { class: "text-lg font-bold", "Warning" }
-                p { class: "py-4",
+                p { class: "pt-4",
                     "HTML sanitization prevents bad actors from posting templates that can compromize your app by interfering with your data (via. JavaScript) or making it unusable (via. CSS styling). However, these functions also allow more advanced stylistic control of the app."
                 }
-                p { class: "font-bold",
+                p { class: "font-bold pt-4",
                     "Never paste templates into user descriptions or journal entries without understanding what they do if you choose to disable this."
+                }
+                p { class: "italic pt-4",
+                    "Text entered with sanitization enabled will be unsanitized from this point forwards. Please review any untrusted HTML."
                 }
 
                 div { class: "modal-action",
-                    label { class: "btn", r#for: "warning-modal", "Close" }
+                    button {
+                        class: "btn",
+                        onclick: move |_| open_warning.set(false),
+                        "Close"
+                    }
                 }
             }
-            label { class: "modal-backdrop", r#for: "warning-modal", "Close" }
         }
     }
 }

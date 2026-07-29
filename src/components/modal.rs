@@ -18,6 +18,7 @@ pub fn Modal(id: String, open: Signal<bool>, children: Element) -> Element {
             if open() {
                 dialog.show_modal().unwrap();
             } else {
+                dialog.close();
             }
         }
     });
@@ -26,7 +27,7 @@ pub fn Modal(id: String, open: Signal<bool>, children: Element) -> Element {
         dialog { class: "modal", id: "{id}",
             {children}
             form { class: "modal-backdrop", method: "dialog",
-                button { "close" }
+                button { onclick: move |_| open.set(false), "close" }
             }
         }
     }

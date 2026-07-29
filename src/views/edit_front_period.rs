@@ -48,7 +48,7 @@ pub fn EditFrontPeriod(id: Uuid) -> Element {
         match db().put_front_period(
             fp.id,
             started_at(),
-            ended_at(),
+            Some(ended_at()),
             assignments(),
         ) {
             Ok(_) => {}

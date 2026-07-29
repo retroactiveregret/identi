@@ -373,10 +373,10 @@ impl Database {
         &self,
         id: Uuid,
         started_at: DateTime<Utc>,
-        ended_at: DateTime<Utc>,
+        ended_at: Option<DateTime<Utc>>,
         assignments: Vec<FrontPeriodAssignment>,
     ) -> Result<(), wasm_bindgen::JsValue> {
-        if started_at > ended_at {
+        if ended_at.is_some() && started_at > ended_at.unwrap() {
             return Err(wasm_bindgen::JsValue::from_str(
                 "End time must be after start time",
             ));
@@ -386,7 +386,7 @@ impl Database {
         let mut write = front_periods.write();
 
         {
-            match write.get_index_mut(idx - 1) {
+            match idx.checked_sub(1).and_then(|i| write.get_index_mut(i)) {
                 Some((_, prev)) => {
                     if prev.ended_at.unwrap() > started_at {
                         if started_at < prev.started_at {
@@ -411,6 +411,7 @@ impl Database {
         {
             match write.get_index_mut(idx + 1) {
                 Some((_, next)) => {
+                    let ended_at = ended_at.unwrap();
                     if ended_at > next.started_at {
                         if ended_at > next.ended_at.unwrap() {
                             return Err(wasm_bindgen::JsValue::from_str(
@@ -436,7 +437,7 @@ impl Database {
             *fp = FrontPeriod {
                 id,
                 started_at,
-                ended_at: Some(ended_at),
+                ended_at: ended_at,
                 assignments,
             };
         }

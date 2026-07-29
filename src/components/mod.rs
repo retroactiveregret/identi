@@ -21,6 +21,7 @@ pub mod member_picker;
 pub mod todo_item;
 pub mod todo_list;
 pub mod modal;
+pub mod holdable;
 
 pub use board_posts::BoardPosts;
 pub use front_history_list::FrontHistoryList;
@@ -44,6 +45,7 @@ pub use member_picker::MemberPicker;
 pub use todo_item::TodoItem;
 pub use todo_list::TodoList;
 pub use modal::Modal;
+pub use holdable::Holdable;
 
 pub mod color_picker;
 pub mod input;
